@@ -31,6 +31,7 @@ struct Player
 	int _Frame;
 	int _CurrentFrameTime;
 	float speedMultiplier;
+	int lives;
 };
 
 struct Enemy
@@ -61,6 +62,9 @@ struct MovingEnemy
 	Rect* sourceRect;
 	int direction;
 	float speed;
+	int frame;
+	int CurrentFrameTimeGhost;
+
 };
 
 
@@ -83,6 +87,7 @@ private:
 	const int _cPacmanFrameTime;
 	const int _cMunchieFrameTime;
 	const int _cCherryFrameTime;
+	const int _cGhostFrameTime;
 	
 
 	//Data for Menu
@@ -96,6 +101,12 @@ private:
 	Rect* _overmenuRectangle;
 	Vector2* _overmenuStringPosition;
 	bool _overmenu;
+
+	//Data for the winning Menu
+	Texture2D* _winmenuBackground;
+	Rect* _winmenuRectangle;
+	Vector2* _winmenuStringPosition;
+	bool _winmenu;
 
 	//Data for start Menu
 	Texture2D* _startmenuBackground;
@@ -140,6 +151,9 @@ private:
 	void UpdateGhost1(MovingEnemy*, int elapsedTime);
 	void UpdateGhost2(MovingEnemy*, int elapsedTime);
 	void UpdateCherry(int elapsedTime);
+
+	//Audio
+	void GameThemeSound();
 
 	
 	

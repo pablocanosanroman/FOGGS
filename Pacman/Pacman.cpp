@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), _cPacmanFrameTime(250), _cMunchieFrameTime(500), _cCherryFrameTime(500)
+Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), _cPacmanFrameTime(250), _cMunchieFrameTime(500), _cCherryFrameTime(500), _cGhostFrameTime(250)
 {
 	//local variable
 	srand(time(NULL));
@@ -27,16 +27,25 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), 
 		_ghosts[k] = new MovingEnemy();
 		_ghosts[k]->direction = 0;
 		_ghosts[k]->speed = 0.2f;
+		_ghosts[k]->frame = 0;
+		_ghosts[k]->CurrentFrameTimeGhost = 0;
+		
 
 	}
 
 	_ghosts[3] = new MovingEnemy();
 	_ghosts[3]->direction = 2;
 	_ghosts[3]->speed = 0.2f;
+	_ghosts[3]->frame = 0;
+	_ghosts[3]->CurrentFrameTimeGhost = 0;
+	
 	
 	_ghosts[2] = new MovingEnemy();
 	_ghosts[2]->direction = 2;
 	_ghosts[2]->speed = 0.2f;
+	_ghosts[2]->frame = 0;
+	_ghosts[2]->CurrentFrameTimeGhost = 0;
+	
 
 	//Starting Cherry
 	_cherry = new Enemy();
@@ -52,12 +61,16 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), 
 	_pacman->_CurrentFrameTime = 0;
 	_pacman->_Frame = 0;
 	_pacman->speedMultiplier = 1.0f;
+	_pacman->lives = 3;
 
 	//Start Menu
 	_startmenu = true;
 
 	//Game Over Menu
 	_overmenu = false;
+
+	//Win Menu
+	_winmenu = false;
 	
 	//Pause Menu
 	_paused = false;
@@ -175,24 +188,33 @@ void Pacman::LoadContent()
 	_menuBackground = new Texture2D();
 	_menuBackground->Load("Textures/Transparency.png", false);
 	_menuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
-	_menuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+	_menuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.2f, Graphics::GetViewportHeight() / 2.2f);
 
 	//Set Start Menu Parameters
 	_startmenuBackground = new Texture2D();
 	_startmenuBackground->Load("Textures/Transparency.png", true);
 	_startmenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
-	_startmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+	_startmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.6f, Graphics::GetViewportHeight() / 2.2f);
 
 	//Set Game Over Menu Parameters
 	_overmenuBackground = new Texture2D();
 	_overmenuBackground->Load("Textures/Transparency.png", false);
 	_overmenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
-	_overmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.0f, Graphics::GetViewportHeight() / 2.0f);
+	_overmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.2f, Graphics::GetViewportHeight() / 2.2f);
+
+	//Set Win Menu Parameters
+	_winmenuBackground = new Texture2D();
+	_winmenuBackground->Load("Textures/Transparency.png", false);
+	_winmenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
+	_winmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.2f, Graphics::GetViewportHeight() / 2.2f);
+	
 
 	//Set pop sound
 	_GameTheme->Load("Sounds/GameTheme.wav");
+	_GameTheme->SetLooping(true);
 	_pop->Load("Sounds/pop.wav");
 	_waka->Load("Sounds/Waka.wav");
+	_waka->SetLooping(true);
 	_cherrypop->Load("Sounds/cherrypop.wav");
 	
 	
@@ -209,18 +231,21 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 	{
 		_pacman->_Position->X += pacmanSpeed; //Moves Pacman across X axis
 		_pacman->_Direction = 0;
+		
 	
 	}
 	else if (state->IsKeyDown(Input::Keys::LEFT))
 	{
 		_pacman->_Position->X += -pacmanSpeed;//Moves Pacman back the X axis
 		_pacman->_Direction = 2;
+		
 	
 	}
 	else if (state->IsKeyDown(Input::Keys::UP))
 	{
 		_pacman->_Position->Y += -pacmanSpeed; //Moves Pacman up Y
 		_pacman->_Direction = 3;
+	
 		
 	}
 	else if (state->IsKeyDown(Input::Keys::DOWN))
@@ -228,6 +253,7 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 		
 		_pacman->_Position->Y += pacmanSpeed; //Moves Pacman down Y
 		_pacman->_Direction = 1;
+	
 		
 	}
 
@@ -263,6 +289,10 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 	else if (state->IsKeyDown(Input::Keys::R))
 	{
 		_cherry->_cherryPosition = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		if (_cherry->_IsCollected)
+		{
+			_cherry->_cherryPosition->X = -50;
+		}
 	}
 	
 }
@@ -276,12 +306,15 @@ void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey)
 		_pKeyDownStart = true;
 		_pKeyDownRestart = true;
 		_paused = !_paused;
+		
+		
 
 	}
 	if (state->IsKeyUp(Input::Keys::P))
 	{
 		_pKeyDownStart = false;
 		_pKeyDownRestart = false;
+		
 	}
 		
 }
@@ -295,9 +328,11 @@ void Pacman::CheckRestart(Input::KeyboardState* state, Input::Keys restartKey)
 			_pKeyDownStart = true;
 			_pKeyDownPause = true;
 			_overmenu = false;
+			
 
 			_pacman->dead = false;
 			_pacman->_Position = new Vector2(350.0f, 350.0f);
+			_pacman->lives = 3;
 
 			_cherry->_cherryPosition = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
 
@@ -427,6 +462,27 @@ void Pacman::UpdateCherry(int elapsedTime)
 
 void Pacman::UpdateGhost1(MovingEnemy* ghost, int elapsedTime)
 {
+	ghost->sourceRect->X = ghost->sourceRect->Width * ghost->frame;
+
+	ghost->CurrentFrameTimeGhost += elapsedTime;
+
+	if (ghost->CurrentFrameTimeGhost > _cGhostFrameTime)
+	{
+		ghost->frame++;
+
+		if (ghost->frame >= 2)
+		{
+			ghost->frame = 0;
+		}
+			
+		if (_paused)
+		{
+			ghost->frame = 0;
+		}
+
+		ghost->CurrentFrameTimeGhost = 0;
+	}
+	
 
 	if (ghost->direction == 2)
 	{
@@ -479,6 +535,27 @@ void Pacman::UpdateGhost1(MovingEnemy* ghost, int elapsedTime)
 
 void Pacman::UpdateGhost2(MovingEnemy* ghost, int elapsedTime)
 {
+	ghost->sourceRect->X = ghost->sourceRect->Width * ghost->frame;
+
+	ghost->CurrentFrameTimeGhost += elapsedTime;
+
+	if (ghost->CurrentFrameTimeGhost > _cGhostFrameTime)
+	{
+		ghost->frame++;
+
+		if (ghost->frame >= 2)
+		{
+			ghost->frame = 0;
+		}
+
+		if (_paused)
+		{
+			ghost->frame = 0;
+		}
+
+		ghost->CurrentFrameTimeGhost = 0;
+	}
+
 	if (ghost->direction == 2)
 	{
 		ghost->position->Y -= ghost->speed * elapsedTime;
@@ -502,6 +579,27 @@ void Pacman::UpdateGhost2(MovingEnemy* ghost, int elapsedTime)
 
 void Pacman::UpdateGhost(MovingEnemy* ghost, int elapsedTime)
 {
+	ghost->sourceRect->X = ghost->sourceRect->Width * ghost->frame;
+
+	ghost->CurrentFrameTimeGhost += elapsedTime;
+
+	if (ghost->CurrentFrameTimeGhost > _cGhostFrameTime)
+	{
+		ghost->frame++;
+
+		if (ghost->frame >= 2)
+		{
+			ghost->frame = 0;
+		}
+
+		if (_paused)
+		{
+			ghost->frame = 0;
+		}
+
+		ghost->CurrentFrameTimeGhost = 0;
+	}
+
 	if (ghost->direction == 0) //Moves Right
 	{
 		ghost->position->X += ghost->speed * elapsedTime;
@@ -553,19 +651,32 @@ void Pacman::Update(int elapsedTime)
 		if (keyboardState->IsKeyDown(Input::Keys::SPACE))
 		{
 			_startmenu = false;
+			GameThemeSound();
+			Audio::Play(_waka);
+			_waka->SetLooping(true);
+			_waka->SetGain(0.1f);
+			
+
+			if (!Audio::Play(_GameTheme))
+			{
+				cout << "Not working" << endl;
+			}
 		}
 	}
 	else
 	{
+		
 		CheckPaused(keyboardState, Input::Keys::P);
 
-		if (!_paused && !_overmenu)
+
+		if (!_paused && !_overmenu && !_winmenu)
 		{
-			//Play Audio
-			Audio::Play(_GameTheme);
+			
 
 			//Code to move Pacman
 			Input(elapsedTime, keyboardState, mouseState);
+
+			
 
 			//Code to make Pacman go to the other side of the map when he hits the wall
 			CheckViewportCollision();
@@ -712,8 +823,32 @@ void Pacman::CheckGhostCollisions()
 			&& (pacmanleft < ghostright))
 		{
 			_pacman->dead = true;
+			_pacman->lives--;
+			_pacman->_Position = new Vector2(350.0f, 350.0f);
+			
+			if (!_pacman->lives == 0)
+			{
+				_pacman->dead = false;
+			}
+			else
+			{
+				_pacman->dead = true;
+			}
 			i = GHOSTCOUNT;
+
 		}
+	}
+}
+
+//Audio for game theme
+void Pacman::GameThemeSound()
+{
+	if (!_paused && !_overmenu && !_winmenu)
+	{
+		Audio::Play(_GameTheme);
+		_GameTheme->SetLooping(true);
+		_GameTheme->SetGain(0.3f);
+		
 	}
 }
 
@@ -721,7 +856,7 @@ void Pacman::Draw(int elapsedTime)
 {
 	// Allows us to easily create a string
 	std::stringstream stream;
-	stream << "Pacman X: " << _pacman->_Position->X << " Y: " << _pacman->_Position->Y;
+	stream << "Pacman X: " << _pacman->_Position->X << " Y: " << _pacman->_Position->Y << " Lives:" << _pacman->lives;
 
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
@@ -747,8 +882,11 @@ void Pacman::Draw(int elapsedTime)
 		}
 		else
 		{
+			if (_pacman->lives == 0)
+			{
+				_overmenu = true;
+			}
 			
-			_overmenu = true;
 			
 		}
 		
@@ -770,11 +908,16 @@ void Pacman::Draw(int elapsedTime)
 				{
 					_munchies[i]->_munchiePosition->X = -50;
 					Audio::Play(_pop);
+					_pop->SetGain(0.2f);
 					
 				}
 				
 				
 			}
+
+			
+			
+
 		}
 
 		SpriteBatch::Draw(_cherry->_cherryTexture, _cherry->_cherryPosition, _cherry->_cherrySourceRect);
@@ -789,10 +932,18 @@ void Pacman::Draw(int elapsedTime)
 			{
 				_cherry->_cherryPosition->X = -50;
 				Audio::Play(_cherrypop);
+				_cherrypop->SetGain(1.0f);
 				
 			}
 			
 		}
+
+		if (_munchies[MUNCHIECOUNT]->_IsCollected == true && _cherry->_IsCollected == true)
+		{
+			_winmenu == true;
+		}
+		
+		
 		
 		for (int k = 0; k < GHOSTCOUNT; k++)
 		{
@@ -826,6 +977,16 @@ void Pacman::Draw(int elapsedTime)
 			SpriteBatch::DrawString(overmenuStream.str().c_str(), _overmenuStringPosition, Color::Red);
 
 		
+		}
+
+		//Draws Win Menu String
+		if (_winmenu)
+		{
+			std::stringstream winmenuStream;
+			winmenuStream << "CONGRATULATIONS! YOU WON!\nPress Y to play again";
+
+			SpriteBatch::Draw(_winmenuBackground, _winmenuRectangle, nullptr);
+			SpriteBatch::DrawString(winmenuStream.str().c_str(), _winmenuStringPosition, Color::Green);
 		}
 	}
 
