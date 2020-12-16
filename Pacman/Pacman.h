@@ -14,6 +14,9 @@
 //This allow us to put multiples ghosts
 #define GHOSTCOUNT 4
 
+//This put another 4 ghosts (different color)
+#define GHOSTCOUNT1 4
+
 // Just need to include main header file
 #include "S2D/S2D.h"
 
@@ -42,6 +45,9 @@ struct Enemy
 	Rect* _munchieSourceRect;
 	Texture2D* _munchieTexture;
 	int _munchieCurrentFrameTime;
+	
+	
+	
 	
 	//Data of Cherry
 	int _cherryframeCount;
@@ -81,6 +87,8 @@ private:
 
 	bool _pKeyDownRestart; //Key down for restart game
 
+	bool _pKeyDownNextLevel; //Key down for next level
+
 	
 	//constant data for Game Variables
 	const float _cPacmanSpeed;
@@ -88,6 +96,9 @@ private:
 	const int _cMunchieFrameTime;
 	const int _cCherryFrameTime;
 	const int _cGhostFrameTime;
+	const int _cYellowGhostFrameTime;
+	
+	int munchieCollectedCount;
 	
 
 	//Data for Menu
@@ -106,7 +117,7 @@ private:
 	Texture2D* _winmenuBackground;
 	Rect* _winmenuRectangle;
 	Vector2* _winmenuStringPosition;
-	bool _winmenu;
+	bool _restartWinMenu;
 
 	//Data for start Menu
 	Texture2D* _startmenuBackground;
@@ -121,7 +132,10 @@ private:
 	Enemy* _munchies[MUNCHIECOUNT];
 
 	//Data to represent Ghost
-	MovingEnemy* _ghosts[GHOSTCOUNT];
+	MovingEnemy* _redghosts[GHOSTCOUNT];
+
+	//Data to represent yellow ghosts
+	MovingEnemy* _yellowghosts[GHOSTCOUNT1];
 
 	//Data to represent Cherry
 	Enemy* _cherry;
@@ -141,8 +155,10 @@ private:
 	//Check methods
 	void CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey);
 	void CheckRestart(Input::KeyboardState* state, Input::Keys restartKey);
+	void CheckNextLevel(Input::KeyboardState* state, Input::Keys nextlevelKey);
 	void CheckViewportCollision();
 	void CheckGhostCollisions();
+	void CheckYellowGhostCollisions();
 
 	//Update methods
 	void UpdatePacman(int elapsedTime);
@@ -150,6 +166,9 @@ private:
 	void UpdateGhost(MovingEnemy*, int elapsedTime);
 	void UpdateGhost1(MovingEnemy*, int elapsedTime);
 	void UpdateGhost2(MovingEnemy*, int elapsedTime);
+	void UpdateYellowGhost(MovingEnemy*, int elapsedTime);
+	void UpdateYellowGhost1(MovingEnemy*, int elapsedTime);
+	void UpdateYellowGhost2(MovingEnemy*, int elapsedTime);
 	void UpdateCherry(int elapsedTime);
 
 	//Audio

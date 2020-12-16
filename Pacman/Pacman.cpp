@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), _cPacmanFrameTime(250), _cMunchieFrameTime(500), _cCherryFrameTime(500), _cGhostFrameTime(250)
+Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), _cPacmanFrameTime(250), _cMunchieFrameTime(500), _cCherryFrameTime(500), _cGhostFrameTime(250), _cYellowGhostFrameTime(250)
 {
 	//local variable
 	srand(time(NULL));
@@ -19,34 +19,61 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), 
 		_munchies[i]->_munchieCurrentFrameTime = 0;
 		_munchies[i]->_IsCollected = false;
 		
+		
+		
 	}
+
+	munchieCollectedCount = 0;
 
 	//initialise ghost character
 	for (int k = 0; k < GHOSTCOUNT-2; k++)
 	{
-		_ghosts[k] = new MovingEnemy();
-		_ghosts[k]->direction = 0;
-		_ghosts[k]->speed = 0.2f;
-		_ghosts[k]->frame = 0;
-		_ghosts[k]->CurrentFrameTimeGhost = 0;
+		_redghosts[k] = new MovingEnemy();
+		_redghosts[k]->direction = 0;
+		_redghosts[k]->speed = 0.2f;
+		_redghosts[k]->frame = 0;
+		_redghosts[k]->CurrentFrameTimeGhost = 0;
 		
 
 	}
 
-	_ghosts[3] = new MovingEnemy();
-	_ghosts[3]->direction = 2;
-	_ghosts[3]->speed = 0.2f;
-	_ghosts[3]->frame = 0;
-	_ghosts[3]->CurrentFrameTimeGhost = 0;
+	_redghosts[3] = new MovingEnemy();
+	_redghosts[3]->direction = 2;
+	_redghosts[3]->speed = 0.2f;
+	_redghosts[3]->frame = 0;
+	_redghosts[3]->CurrentFrameTimeGhost = 0;
 	
 	
-	_ghosts[2] = new MovingEnemy();
-	_ghosts[2]->direction = 2;
-	_ghosts[2]->speed = 0.2f;
-	_ghosts[2]->frame = 0;
-	_ghosts[2]->CurrentFrameTimeGhost = 0;
-	
+	_redghosts[2] = new MovingEnemy();
+	_redghosts[2]->direction = 2;
+	_redghosts[2]->speed = 0.2f;
+	_redghosts[2]->frame = 0;
+	_redghosts[2]->CurrentFrameTimeGhost = 0;
 
+	//Initialise yellow ghost character
+	for (int j = 0; j < GHOSTCOUNT1 - 2; j++)
+	{
+		_yellowghosts[j] = new MovingEnemy();
+		_yellowghosts[j]->direction = 0;
+		_yellowghosts[j]->speed = 0.2f;
+		_yellowghosts[j]->frame = 0;
+		_yellowghosts[j]->CurrentFrameTimeGhost = 0;
+	}
+
+	_yellowghosts[3] = new MovingEnemy();
+	_yellowghosts[3]->direction = 2;
+	_yellowghosts[3]->speed = 0.2f;
+	_yellowghosts[3]->frame = 0;
+	_yellowghosts[3]->CurrentFrameTimeGhost = 0;
+
+
+	_yellowghosts[2] = new MovingEnemy();
+	_yellowghosts[2]->direction = 2;
+	_yellowghosts[2]->speed = 0.2f;
+	_yellowghosts[2]->frame = 0;
+	_yellowghosts[2]->CurrentFrameTimeGhost = 0;
+	
+	
 	//Starting Cherry
 	_cherry = new Enemy();
 	_cherry->_cherryCurrentFrameTime = 0;
@@ -70,13 +97,16 @@ Pacman::Pacman(int argc, char* argv[]) : Game(argc, argv), _cPacmanSpeed(0.2f), 
 	_overmenu = false;
 
 	//Win Menu
-	_winmenu = false;
+	_restartWinMenu = false;
 	
 	//Pause Menu
 	_paused = false;
 
 	//Key to start
 	_pKeyDownStart = false;
+	_pKeyDownRestart = false;
+	_pKeyDownNextLevel = false;
+	_pKeyDownPause = false;
 
 	//Starting pop sound
 	_pop = new SoundEffect();
@@ -121,15 +151,25 @@ Pacman::~Pacman()
 	delete _cherry;
 
 	//destructor ghosts
-	delete _ghosts[0]->texture;
+	delete _redghosts[0]->texture;
 	int nCount1 = 0;
 	for (nCount1 = 0; nCount1 < GHOSTCOUNT; nCount1++)
 	{
-		delete _ghosts[nCount1]->texture;
-		delete _ghosts[nCount1]->position;
-		delete _ghosts[nCount1]->sourceRect;
+		delete _redghosts[nCount1]->texture;
+		delete _redghosts[nCount1]->position;
+		delete _redghosts[nCount1]->sourceRect;
 	}
-	delete[] _ghosts;
+	delete[] _redghosts;
+
+	delete _yellowghosts[0]->texture;
+	int nCount2 = 0;
+	for (nCount2 = 0; nCount2 < GHOSTCOUNT1; nCount2++)
+	{
+		delete _yellowghosts[nCount2]->texture;
+		delete _yellowghosts[nCount2]->position;
+		delete _yellowghosts[nCount2]->sourceRect;
+	}
+	delete[] _yellowghosts;
 
 	//delete sound
 	delete _pop;
@@ -173,11 +213,20 @@ void Pacman::LoadContent()
 	//Load Ghost character
 	for (int k = 0; k < GHOSTCOUNT; k++)
 	{
-		_ghosts[k]->texture = new Texture2D();
-		_ghosts[k]->texture->Load("Textures/RedGhost.png", false);
-		_ghosts[k]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
-		_ghosts[k]->sourceRect = new Rect(0.0f, 0.0f, 36, 36);
+		_redghosts[k]->texture = new Texture2D();
+		_redghosts[k]->texture->Load("Textures/RedGhost.png", false);
+		_redghosts[k]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		_redghosts[k]->sourceRect = new Rect(0.0f, 0.0f, 36, 36);
 
+	}
+	
+	//Load Yellow Ghost character
+	for (int j = 0; j < GHOSTCOUNT1; j++)
+	{
+		_yellowghosts[j]->texture = new Texture2D();
+		_yellowghosts[j]->texture->Load("Textures/YellowGhost.png", false);
+		_yellowghosts[j]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		_yellowghosts[j]->sourceRect = new Rect(0.0f, 0.0f, 36, 36);
 	}
 	
 
@@ -200,13 +249,13 @@ void Pacman::LoadContent()
 	_overmenuBackground = new Texture2D();
 	_overmenuBackground->Load("Textures/Transparency.png", false);
 	_overmenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
-	_overmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.2f, Graphics::GetViewportHeight() / 2.2f);
+	_overmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.6f, Graphics::GetViewportHeight() / 2.2f);
 
 	//Set Win Menu Parameters
 	_winmenuBackground = new Texture2D();
 	_winmenuBackground->Load("Textures/Transparency.png", false);
 	_winmenuRectangle = new Rect(0.0f, 0.0f, Graphics::GetViewportWidth(), Graphics::GetViewportHeight());
-	_winmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.2f, Graphics::GetViewportHeight() / 2.2f);
+	_winmenuStringPosition = new Vector2(Graphics::GetViewportWidth() / 2.6f, Graphics::GetViewportHeight() / 2.2f);
 	
 
 	//Set pop sound
@@ -265,7 +314,12 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 
 		for (int k = 0; k < GHOSTCOUNT; k++)
 		{
-			_ghosts[k]->speed = 0.4f;
+			_redghosts[k]->speed = 0.4f;
+		}
+
+		for (int j = 0; j < GHOSTCOUNT1; j++)
+		{
+			_yellowghosts[j]->speed = 0.4f;
 		}
 	}
 	else
@@ -275,18 +329,16 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 
 		for (int k = 0; k < GHOSTCOUNT; k++)
 		{
-			_ghosts[k]->speed = 0.2f;
+			_redghosts[k]->speed = 0.2f;
+		}
+
+		for (int j = 0; j < GHOSTCOUNT1; j++)
+		{
+			_yellowghosts[j]->speed = 0.2f;
 		}
 	}
 	//Code to move the cherry with the mouse
-	mouseState->LeftButton;
-
-	if (mouseState->LeftButton == Input::ButtonState::PRESSED)
-	{
-		_cherry->_cherryPosition->X = mouseState->X;
-		_cherry->_cherryPosition->Y = mouseState->Y;
-	}
-	else if (state->IsKeyDown(Input::Keys::R))
+	if (state->IsKeyDown(Input::Keys::R))
 	{
 		_cherry->_cherryPosition = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
 		if (_cherry->_IsCollected)
@@ -301,19 +353,25 @@ void Pacman::Input(int elapsedTime, Input::KeyboardState* state, Input::MouseSta
 
 void Pacman::CheckPaused(Input::KeyboardState* state, Input::Keys pauseKey)
 {
-	if (state->IsKeyDown(Input::Keys::P) && !_pKeyDownStart &&!_pKeyDownRestart)
+	if (state->IsKeyDown(Input::Keys::P) && !_pKeyDownStart && !_pKeyDownRestart && !_pKeyDownNextLevel)
 	{
 		_pKeyDownStart = true;
 		_pKeyDownRestart = true;
+		_pKeyDownNextLevel = true;
 		_paused = !_paused;
 		
 		
 
 	}
+	
+	
 	if (state->IsKeyUp(Input::Keys::P))
 	{
 		_pKeyDownStart = false;
 		_pKeyDownRestart = false;
+		_pKeyDownNextLevel = false;
+		
+
 		
 	}
 		
@@ -323,12 +381,11 @@ void Pacman::CheckRestart(Input::KeyboardState* state, Input::Keys restartKey)
 {
 	
 	
-		if (state->IsKeyDown(Input::Keys::Y) && !_pKeyDownPause && !_pKeyDownStart && _overmenu)
+		if (state->IsKeyDown(Input::Keys::Y) && !_pKeyDownPause && !_pKeyDownStart && !_pKeyDownNextLevel && _overmenu)
 		{
-			_pKeyDownStart = true;
-			_pKeyDownPause = true;
-			_overmenu = false;
 			
+			_overmenu = false;
+			munchieCollectedCount = 0;
 
 			_pacman->dead = false;
 			_pacman->_Position = new Vector2(350.0f, 350.0f);
@@ -343,18 +400,62 @@ void Pacman::CheckRestart(Input::KeyboardState* state, Input::Keys restartKey)
 
 			for (int k = 0; k < GHOSTCOUNT; k++)
 			{
-				_ghosts[k]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+				_redghosts[k]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
 			}
 
 
 		}
-		if (state->IsKeyUp(Input::Keys::Y))
-		{
-			_pKeyDownStart = false;
-			_pKeyDownPause = false;
-		}
+		
 	
 
+}
+
+void Pacman::CheckNextLevel(Input::KeyboardState* state, Input::Keys nextlevelkey)
+{
+	if (state->IsKeyDown(Input::Keys::I) && !_pKeyDownPause && !_pKeyDownStart && !_pKeyDownRestart && _restartWinMenu)
+	{
+		
+		_pKeyDownStart = true;
+		_pKeyDownPause = true;
+		_pKeyDownRestart = true;
+		munchieCollectedCount = 0;
+		_restartWinMenu = false;
+		
+		
+
+		_pacman->_Position = new Vector2(350.0f, 350.0f);
+
+		_cherry->_cherryPosition = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		_cherry->_IsCollected = false;
+
+		for (int i = 0; i < MUNCHIECOUNT; i++)
+		{
+			_munchies[i]->_munchiePosition = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		}
+
+		for (int k = 0; k < GHOSTCOUNT; k++)
+		{
+			_redghosts[k]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+			
+
+		}
+
+		for (int j = 0; j < GHOSTCOUNT1; j++)
+		{
+			_yellowghosts[j]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+		}
+
+
+		
+
+
+	}
+	if (state->IsKeyUp(Input::Keys::I))
+	{
+		_pKeyDownStart = false;
+		_pKeyDownPause = false;
+		_pKeyDownRestart = false;
+	}
 }
 //Code to make Pacman go to the other side of the map when he hits the wall
 void Pacman::CheckViewportCollision()
@@ -437,6 +538,7 @@ void Pacman::UpdateMunchies(Enemy* pMunchie, int elapsedTime)
 		pMunchie->_munchieSourceRect->X = pMunchie->_munchieSourceRect->Width * pMunchie->_munchieframeCount;
 	
 }
+
 
 //Animation of Cherry
 void Pacman::UpdateCherry(int elapsedTime)
@@ -621,6 +723,164 @@ void Pacman::UpdateGhost(MovingEnemy* ghost, int elapsedTime)
 	
 }
 
+void Pacman::UpdateYellowGhost1(MovingEnemy* yellowghost, int elapsedTime)
+{
+	yellowghost->sourceRect->X = yellowghost->sourceRect->Width * yellowghost->frame;
+
+	yellowghost->CurrentFrameTimeGhost += elapsedTime;
+
+	if (yellowghost->CurrentFrameTimeGhost > _cYellowGhostFrameTime)
+	{
+		yellowghost->frame++;
+
+		if (yellowghost->frame >= 2)
+		{
+			yellowghost->frame = 0;
+		}
+
+		if (_paused)
+		{
+			yellowghost->frame = 0;
+		}
+
+		yellowghost->CurrentFrameTimeGhost = 0;
+	}
+
+
+	if (yellowghost->direction == 2)
+	{
+		yellowghost->position->Y -= yellowghost->speed * elapsedTime;
+
+	}
+	else if (yellowghost->direction == 3)
+	{
+		yellowghost->position->Y += yellowghost->speed * elapsedTime;
+
+	}
+	else if (yellowghost->direction == 0)
+	{
+		yellowghost->position->X += yellowghost->speed * elapsedTime;
+
+	}
+	else if (yellowghost->direction == 1)
+	{
+		yellowghost->position->X -= yellowghost->speed * elapsedTime;
+
+	}
+
+	if (yellowghost->position->Y + yellowghost->sourceRect->Height >= Graphics::GetViewportHeight())
+	{
+		//are we bottom left, go right
+		yellowghost->position->Y = Graphics::GetViewportHeight() - yellowghost->sourceRect->Height - 1;
+		yellowghost->direction = 0;
+	}
+	if (yellowghost->position->X <= 0)
+	{
+		//are we top left, go down
+		yellowghost->position->X = 1;
+		yellowghost->direction = 3;
+	}
+	if (yellowghost->position->Y <= 0)
+	{
+		//are we top right, go left
+		yellowghost->position->Y = 1;
+		yellowghost->direction = 1;
+	}
+	if (yellowghost->position->X + yellowghost->sourceRect->Width >= Graphics::GetViewportWidth())
+	{
+		//are we bottom right, go up
+		yellowghost->position->X = Graphics::GetViewportWidth() - yellowghost->sourceRect->Width - 1;
+		yellowghost->direction = 2;
+	}
+}
+
+void Pacman::UpdateYellowGhost2(MovingEnemy* yellowghost, int elapsedTime)
+{
+	yellowghost->sourceRect->X = yellowghost->sourceRect->Width * yellowghost->frame;
+
+	yellowghost->CurrentFrameTimeGhost += elapsedTime;
+
+	if (yellowghost->CurrentFrameTimeGhost > _cYellowGhostFrameTime)
+	{
+		yellowghost->frame++;
+
+		if (yellowghost->frame >= 2)
+		{
+			yellowghost->frame = 0;
+		}
+
+		if (_paused)
+		{
+			yellowghost->frame = 0;
+		}
+
+		yellowghost->CurrentFrameTimeGhost = 0;
+	}
+
+	if (yellowghost->direction == 2)
+	{
+		yellowghost->position->Y -= yellowghost->speed * elapsedTime;
+	}
+	else if (yellowghost->direction == 3)
+	{
+		yellowghost->position->Y += yellowghost->speed * elapsedTime;
+	}
+
+	if (yellowghost->position->Y <= 0)
+	{
+		yellowghost->direction = 3;
+	}
+	else if (yellowghost->position->Y + yellowghost->sourceRect->Height >= Graphics::GetViewportHeight())
+	{
+
+		yellowghost->direction = 2;
+	}
+
+}
+
+void Pacman::UpdateYellowGhost(MovingEnemy* yellowghost, int elapsedTime)
+{
+	yellowghost->sourceRect->X = yellowghost->sourceRect->Width * yellowghost->frame;
+
+	yellowghost->CurrentFrameTimeGhost += elapsedTime;
+
+	if (yellowghost->CurrentFrameTimeGhost > _cYellowGhostFrameTime)
+	{
+		yellowghost->frame++;
+
+		if (yellowghost->frame >= 2)
+		{
+			yellowghost->frame = 0;
+		}
+
+		if (_paused)
+		{
+			yellowghost->frame = 0;
+		}
+
+		yellowghost->CurrentFrameTimeGhost = 0;
+	}
+
+	if (yellowghost->direction == 0) //Moves Right
+	{
+		yellowghost->position->X += yellowghost->speed * elapsedTime;
+	}
+	else if (yellowghost->direction == 1) //Moves Left
+	{
+		yellowghost->position->X -= yellowghost->speed * elapsedTime;
+
+	}
+
+	if (yellowghost->position->X + yellowghost->sourceRect->Width >= Graphics::GetViewportWidth()) //Hits Right edge
+	{
+		yellowghost->direction = 1;
+	}
+	else if (yellowghost->position->X <= 0)
+	{
+		yellowghost->direction = 0;
+	}
+
+}
 
 void Pacman::Update(int elapsedTime)
 {
@@ -635,7 +895,12 @@ void Pacman::Update(int elapsedTime)
 
 	for (int k = 0; k < GHOSTCOUNT; k++)
 	{
-		_ghosts[k]->sourceRect->Y = _ghosts[k]->sourceRect->Height * _ghosts[k]->direction;
+		_redghosts[k]->sourceRect->Y = _redghosts[k]->sourceRect->Height * _redghosts[k]->direction;
+	}
+
+	for (int j = 0; j < GHOSTCOUNT1; j++)
+	{
+		_yellowghosts[j]->sourceRect->Y = _yellowghosts[j]->sourceRect->Height * _yellowghosts[j]->direction;
 	}
 
 	// Gets the current state of the keyboard
@@ -655,7 +920,6 @@ void Pacman::Update(int elapsedTime)
 			Audio::Play(_waka);
 			_waka->SetLooping(true);
 			_waka->SetGain(0.1f);
-			
 
 			if (!Audio::Play(_GameTheme))
 			{
@@ -669,7 +933,7 @@ void Pacman::Update(int elapsedTime)
 		CheckPaused(keyboardState, Input::Keys::P);
 
 
-		if (!_paused && !_overmenu && !_winmenu)
+		if (!_paused && !_overmenu && !_restartWinMenu)
 		{
 			
 
@@ -694,30 +958,47 @@ void Pacman::Update(int elapsedTime)
 
 			CheckGhostCollisions();
 
+			CheckYellowGhostCollisions();
+
 			//Make the animation of Pacman
 			UpdatePacman(elapsedTime);
 
 			//Animation for Munchie
+
 			for (int i = 0; i < MUNCHIECOUNT; i++)
 			{
 				UpdateMunchies(_munchies[i], elapsedTime);
+				
 			}
 
 			//Animation of Cherry
 			UpdateCherry(elapsedTime);
 
-			for (int k = 0; k < GHOSTCOUNT-1; k++)
+			
+			
+			//Animations of Ghosts
+			for (int k = 0; k < GHOSTCOUNT-2; k++)
 			{
-				UpdateGhost(_ghosts[k], elapsedTime);
+				UpdateGhost(_redghosts[k], elapsedTime);
 			}
 
-			UpdateGhost1(_ghosts[3], elapsedTime);
-			UpdateGhost2(_ghosts[2], elapsedTime);
+			UpdateGhost1(_redghosts[3], elapsedTime);
+			UpdateGhost2(_redghosts[2], elapsedTime);
+
+			//Animations of YellowGhosts
+			for (int j = 0; j < GHOSTCOUNT1 - 2; j++)
+			{
+				UpdateYellowGhost(_yellowghosts[j], elapsedTime);
+			}
+
+			UpdateYellowGhost1(_yellowghosts[3], elapsedTime);
+			UpdateYellowGhost2(_yellowghosts[2], elapsedTime);
 		}
 
 		
 		
 			CheckRestart(keyboardState, Input::Keys::Y);
+			CheckNextLevel(keyboardState, Input::Keys::I);
 		
 		
 	}
@@ -814,10 +1095,10 @@ void Pacman::CheckGhostCollisions()
 	for (i = 0; i < GHOSTCOUNT; i++)
 	{
 		//Populate variables with Ghost data
-		ghostbottom = _ghosts[i]->position->Y + _ghosts[i]->sourceRect->Height;
-		ghostleft = _ghosts[i]->position->X;
-		ghostright = _ghosts[i]->position->X + _ghosts[i]->sourceRect->Width;
-		ghosttop = _ghosts[i]->position->Y;
+		ghostbottom = _redghosts[i]->position->Y + _redghosts[i]->sourceRect->Height;
+		ghostleft = _redghosts[i]->position->X;
+		ghostright = _redghosts[i]->position->X + _redghosts[i]->sourceRect->Width;
+		ghosttop = _redghosts[i]->position->Y;
 
 		if ((pacmanbottom > ghosttop) && (pacmantop < ghostbottom) && (pacmanright > ghostleft)
 			&& (pacmanleft < ghostright))
@@ -825,6 +1106,11 @@ void Pacman::CheckGhostCollisions()
 			_pacman->dead = true;
 			_pacman->lives--;
 			_pacman->_Position = new Vector2(350.0f, 350.0f);
+			_redghosts[i]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+			for (int j = 0; j < GHOSTCOUNT1; j++)
+			{
+				_yellowghosts[i]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+			}
 			
 			if (!_pacman->lives == 0)
 			{
@@ -840,10 +1126,59 @@ void Pacman::CheckGhostCollisions()
 	}
 }
 
+
+void Pacman::CheckYellowGhostCollisions()
+{
+	//Local Variables
+	int i = 0;
+	int pacmanbottom = _pacman->_Position->Y + _pacman->_SourceRect->Height;
+	int ghostbottom = 0;
+	int pacmanleft = _pacman->_Position->X;
+	int ghostleft = 0;
+	int pacmanright = _pacman->_Position->X + _pacman->_SourceRect->Width;
+	int ghostright = 0;
+	int pacmantop = _pacman->_Position->Y;
+	int ghosttop = 0;
+
+	for (i = 0; i < GHOSTCOUNT1; i++)
+	{
+		//Populate variables with Ghost data
+		ghostbottom = _yellowghosts[i]->position->Y + _yellowghosts[i]->sourceRect->Height;
+		ghostleft = _yellowghosts[i]->position->X;
+		ghostright = _yellowghosts[i]->position->X + _yellowghosts[i]->sourceRect->Width;
+		ghosttop = _yellowghosts[i]->position->Y;
+
+		if ((pacmanbottom > ghosttop) && (pacmantop < ghostbottom) && (pacmanright > ghostleft)
+			&& (pacmanleft < ghostright))
+		{
+			_pacman->dead = true;
+			_pacman->lives--;
+			_pacman->_Position = new Vector2(350.0f, 350.0f);
+			_yellowghosts[i]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+
+			for (int j = 0; j < GHOSTCOUNT; j++)
+			{
+				_redghosts[i]->position = new Vector2((rand() % Graphics::GetViewportWidth()), (rand() % Graphics::GetViewportHeight()));
+			}
+
+			if (!_pacman->lives == 0)
+			{
+				_pacman->dead = false;
+			}
+			else
+			{
+				_pacman->dead = true;
+			}
+			i = GHOSTCOUNT1;
+
+		}
+	}
+}
+
 //Audio for game theme
 void Pacman::GameThemeSound()
 {
-	if (!_paused && !_overmenu && !_winmenu)
+	if (!_paused && !_overmenu && !_restartWinMenu)
 	{
 		Audio::Play(_GameTheme);
 		_GameTheme->SetLooping(true);
@@ -854,10 +1189,12 @@ void Pacman::GameThemeSound()
 
 void Pacman::Draw(int elapsedTime)
 {
+	
 	// Allows us to easily create a string
 	std::stringstream stream;
-	stream << "Pacman X: " << _pacman->_Position->X << " Y: " << _pacman->_Position->Y << " Lives:" << _pacman->lives;
-
+	
+	stream << "Pacman X: " << _pacman->_Position->X << " Y: " << _pacman->_Position->Y << " Lives:" << _pacman->lives << " Points:" << munchieCollectedCount;
+	
 	SpriteBatch::BeginDraw(); // Starts Drawing
 
 
@@ -873,7 +1210,7 @@ void Pacman::Draw(int elapsedTime)
 	}
 	else
 	{
-		
+		//Pacman Draw
 
 		if (!_pacman->dead)
 		{
@@ -890,11 +1227,13 @@ void Pacman::Draw(int elapsedTime)
 			
 		}
 		
-
+		
+		//Draw Munchies and collection
 		int i;
+		
 		for (i = 0; i < MUNCHIECOUNT; i++)
 		{
-			//Draw Munchie
+			
 			/*SpriteBatch::Draw(_munchieTexture, _munchieRect, nullptr, Vector2::Zero, 1.0f, 0.0f, Color::White, SpriteEffect::NONE);*/
 			SpriteBatch::Draw(_munchies[i]->_munchieTexture, _munchies[i]->_munchiePosition, _munchies[i]->_munchieSourceRect);
 			
@@ -902,11 +1241,14 @@ void Pacman::Draw(int elapsedTime)
 				_munchies[i]->_munchieSourceRect->Width, _munchies[i]->_munchieSourceRect->Height))
 			{
 				_munchies[i]->_IsCollected = true;
-				
+				munchieCollectedCount++;
 
 				if (_munchies[i]->_IsCollected)
 				{
 					_munchies[i]->_munchiePosition->X = -50;
+					
+					
+					
 					Audio::Play(_pop);
 					_pop->SetGain(0.2f);
 					
@@ -920,6 +1262,7 @@ void Pacman::Draw(int elapsedTime)
 
 		}
 
+		//Draw Cherry and collection
 		SpriteBatch::Draw(_cherry->_cherryTexture, _cherry->_cherryPosition, _cherry->_cherrySourceRect);
 
 		if (CherryCollisionCheck(_pacman->_Position->X, _pacman->_Position->Y, _pacman->_SourceRect->Width, _pacman->_SourceRect->Height, _cherry->_cherryPosition->X, _cherry->_cherryPosition->Y,
@@ -933,22 +1276,35 @@ void Pacman::Draw(int elapsedTime)
 				_cherry->_cherryPosition->X = -50;
 				Audio::Play(_cherrypop);
 				_cherrypop->SetGain(1.0f);
-				
-			}
-			
-		}
 
-		if (_munchies[MUNCHIECOUNT]->_IsCollected == true && _cherry->_IsCollected == true)
-		{
-			_winmenu == true;
+			}
+
 		}
 		
 		
+		if (munchieCollectedCount == 100 && _cherry->_IsCollected)
+		{
+			_restartWinMenu = true;
+		}
+		
+		
+		//Draw Ghosts (Red and Yellow)
 		
 		for (int k = 0; k < GHOSTCOUNT; k++)
 		{
-			SpriteBatch::Draw(_ghosts[k]->texture, _ghosts[k]->position, _ghosts[k]->sourceRect);
+			SpriteBatch::Draw(_redghosts[k]->texture, _redghosts[k]->position, _redghosts[k]->sourceRect);
 		}
+
+		for (int j = 0; j < GHOSTCOUNT1; j++)
+		{
+
+			SpriteBatch::Draw(_yellowghosts[j]->texture, _yellowghosts[j]->position, _yellowghosts[j]->sourceRect);
+
+
+		}
+		
+
+		
 
 		//Draw the coordinates of Pacman
 
@@ -980,13 +1336,15 @@ void Pacman::Draw(int elapsedTime)
 		}
 
 		//Draws Win Menu String
-		if (_winmenu)
+		if (_restartWinMenu)
 		{
 			std::stringstream winmenuStream;
-			winmenuStream << "CONGRATULATIONS! YOU WON!\nPress Y to play again";
+			winmenuStream << "CONGRATULATIONS! YOU WON!\n            Press I to play again";
 
 			SpriteBatch::Draw(_winmenuBackground, _winmenuRectangle, nullptr);
 			SpriteBatch::DrawString(winmenuStream.str().c_str(), _winmenuStringPosition, Color::Green);
+			
+			
 		}
 	}
 
